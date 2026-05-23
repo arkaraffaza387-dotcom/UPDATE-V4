@@ -36,15 +36,41 @@
             font-weight: bold;
             font-size: 16px;
             cursor: pointer;
+            transition: all 0.3s ease;
         }
-        .bug-btn {
+        
+        /* Style Khusus untuk List Bug Premium */
+        .bug-item {
             background: linear-gradient(145deg, #1e1e2f, #2a2a45);
-            border: 1px solid #ffd700;
+            border: 1px solid #444;
+            color: #ccc;
+            text-align: left;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 15px;
+            border-radius: 12px;
+            cursor: pointer;
         }
-        .bug-btn:hover {
+        .bug-item:hover {
+            border-color: #ffd700;
             background: linear-gradient(145deg, #2a2a45, #3a3a60);
-            transform: translateY(-3px);
         }
+        /* Efek saat bug dipilih */
+        .bug-item.selected {
+            border: 2px solid #00ff88;
+            background: rgba(0, 255, 136, 0.1);
+            color: #fff;
+            box-shadow: 0 0 10px rgba(0, 255, 136, 0.2);
+        }
+        .bug-checkbox {
+            width: 20px;
+            height: 20px;
+            accent-color: #00ff88;
+            cursor: pointer;
+            pointer-events: none; /* Agar klik tembus ke div parent */
+        }
+        
         input {
             width: 100%;
             padding: 15px;
@@ -54,10 +80,26 @@
             background: rgba(0,0,0,0.7);
             color: white;
             font-size: 16px;
+            box-sizing: border-box;
         }
         .error { color: #ff4444; text-align: center; margin: 15px 0; }
-        .result { margin: 15px 0; padding: 15px; border-radius: 10px; text-align: center; font-weight: bold; }
+        .result { margin: 15px 0; padding: 15px; border-radius: 10px; text-align: center; font-weight: bold; word-wrap: break-word; }
         .channel-btn { background: linear-gradient(#25D366, #128C7E); color: white; }
+        
+        /* Tombol Kirim Utama di Bawah */
+        .send-main-btn {
+            background: linear-gradient(90deg, #00ff88, #00cc6a);
+            color: #000;
+            font-size: 18px;
+            margin-top: 20px;
+            box-shadow: 0 0 15px rgba(0, 255, 136, 0.4);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        .send-main-btn:hover {
+            transform: scale(1.02);
+            box-shadow: 0 0 25px rgba(0, 255, 136, 0.6);
+        }
     </style>
 </head>
 <body>
@@ -100,7 +142,13 @@
                 <input type="text" id="premiumTarget" placeholder="+628xxxxxxxxxx">
             </div>
 
+            <p style="color: #aaa; font-size: 0.9em; margin-bottom: 10px;">✅ Centang bug yang ingin dikirim:</p>
+            
+            <!-- Grid Checkbox Bug -->
             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 12px;" id="premiumGrid"></div>
+
+            <!-- TOMBOL KIRIM DI PALING BAWAH -->
+            <button onclick="sendSelectedBugs()" class="send-main-btn">🚀 SEND SELECTED BUGS</button>
 
             <button onclick="logout()" style="background:#ff4444; margin-top: 25px;">Logout</button>
             <div id="premiumResult" class="result"></div>
@@ -108,10 +156,10 @@
     </div>
 
     <script>
+        // DATABASE USER (Password PRIVATE2 sudah diubah menjadi PRIVATE2)
         const allowedUsers = [
             { username: "PRIVATE", password: "PRIVATE", premium: false },
             { username: "AZFER.ID", password: "AZFER.ID", premium: true, premiumExpiresAt: null },   // Unlimited
-            // Password diubah dari PRIVATE_AZFER menjadi PRIVATE2
             { username: "PRIVATE2", password: "PRIVATE2", premium: true, premiumExpiresAt: "2026-05-25T03:00:00" }, 
             { username: "PRIVATE3", password: "PRIVATE3", premium: false }
         ];
@@ -119,23 +167,32 @@
         let currentUser = null;
 
         function login() {
-            const username = document.getElementById('username').value.trim();
-            const password = document.getElementById('password').value.trim();
+            const usernameInput = document.getElementById('username');
+            const passwordInput = document.getElementById('password');
+            
+            // Trim otomatis agar spasi tidak mengganggu login
+            const username = usernameInput.value.trim();
+            const password = passwordInput.value.trim();
             const errorEl = document.getElementById('error');
 
             errorEl.textContent = "";
 
+            if (!username || !password) {
+                errorEl.textContent = "Isi Username dan Password!";
+                return;
+            }
+
             const user = allowedUsers.find(u => u.username === username && u.password === password);
 
             if (!user) {
-                errorEl.textContent = "PASSWORD ATAU USERNAME ANDA SALAH MASUKAN YANG BENAR";
+                errorEl.textContent = "Username atau Password Salah!";
                 return;
             }
 
             // Cek kadaluarsa Premium
             if (user.premium && user.premiumExpiresAt) {
                 if (new Date(user.premiumExpiresAt) < new Date()) {
-                    errorEl.textContent = "Premium Anda telah kadaluarsa!";
+                    errorEl.textContent = "Premium Kadaluarsa!";
                     return;
                 }
             }
@@ -173,7 +230,7 @@
         function checkTarget(id) {
             const target = document.getElementById(id).value.trim();
             if (!target) {
-                alert("MOHON ISI NO WHATSAPP YANG INI DI BUG JIKA KOSONG BUG TIDAK BISA TERKIRIM");
+                alert("MOHON ISI NO WHATSAPP TARGET!");
                 return false;
             }
             return true;
@@ -189,10 +246,8 @@
         function superLag() { if(checkTarget('freeTarget')) freeResult("Super Lag Terkirim"); }
         function freeze() { if(checkTarget('freeTarget')) freeResult("Freeze Account Terkirim"); }
         function crash() { if(checkTarget('freeTarget')) freeResult("Crash WhatsApp Terkirim"); }
-        function logoutAll() { if(checkTarget('freeTarget')) freeResult("Logout All Device Terkirim"); }
-        function banAccount() { if(checkTarget('freeTarget')) freeResult("Ban Account Terkirim"); }
 
-        // ==================== PREMIUM 50 BUGS ====================
+        // ==================== PREMIUM LOGIC ====================
         const premiumBugList = [
             "Super Ultimate Lag","Nuclear Crash","Permanent Ban","Account Destroyer",
             "Freeze Forever","Infinite Loop","Ghost Mode","Device Overheat","Mass Logout",
@@ -210,19 +265,66 @@
         function generatePremiumBugs() {
             const grid = document.getElementById('premiumGrid');
             grid.innerHTML = '';
-            premiumBugList.forEach(bug => {
-                const btn = document.createElement('button');
-                btn.className = 'bug-btn';
-                btn.textContent = bug;
-                btn.onclick = () => sendPremiumBug(bug);
-                grid.appendChild(btn);
+            premiumBugList.forEach((bug, index) => {
+                const div = document.createElement('div');
+                div.className = 'bug-item';
+                
+                const span = document.createElement('span');
+                span.textContent = bug;
+                
+                const checkbox = document.createElement('input');
+                checkbox.type = 'checkbox';
+                checkbox.className = 'bug-checkbox';
+                checkbox.value = bug;
+                
+                // Klik pada div akan mencentang checkbox
+                div.addEventListener('click', () => {
+                    checkbox.checked = !checkbox.checked;
+                    toggleStyle(div, checkbox.checked);
+                });
+
+                div.appendChild(span);
+                div.appendChild(checkbox);
+                grid.appendChild(div);
             });
         }
 
-        function sendPremiumBug(bugName) {
+        function toggleStyle(div, isChecked) {
+            if (isChecked) {
+                div.classList.add('selected');
+            } else {
+                div.classList.remove('selected');
+            }
+        }
+
+        // FUNGSI KIRIM UTAMA (TOMBOL BAWAH)
+        function sendSelectedBugs() {
             if (!checkTarget('premiumTarget')) return;
+
             const target = document.getElementById('premiumTarget').value.trim();
-            document.getElementById('premiumResult').innerHTML = `🚀 ${bugName} berhasil dikirim ke ${target}`;
+            const checkboxes = document.querySelectorAll('.bug-checkbox:checked');
+            const resultEl = document.getElementById('premiumResult');
+
+            if (checkboxes.length === 0) {
+                alert("⚠️ PILIH MINIMAL 1 BUG DULU!");
+                return;
+            }
+
+            let selectedBugs = [];
+            checkboxes.forEach((cb) => {
+                selectedBugs.push(cb.value);
+            });
+
+            // Tampilkan Hasil
+            resultEl.innerHTML = `🚀 <b>SUCCESS!</b><br>Mengirim ${selectedBugs.length} Bug ke ${target}<br><br>`;
+            
+            let listHtml = "<div style='text-align:left; max-height:200px; overflow-y:auto; background:rgba(0,0,0,0.3); padding:10px; border-radius:10px;'>";
+            selectedBugs.forEach(bug => {
+                listHtml += `<div style='padding:5px; border-bottom:1px solid #333; color:#00ff88;'>✅ ${bug} Sent</div>`;
+            });
+            listHtml += "</div>";
+            
+            resultEl.innerHTML += listHtml;
         }
     </script>
 </body>
